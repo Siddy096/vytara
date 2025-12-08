@@ -84,11 +84,7 @@ export function HomePage({
     setShowMedicalForm(true);
   };
 
-  const handleDeleteEmergency = (index: number) => {
-    const updatedContacts = [...userData.personalInfo.emergencyContacts];
-    updatedContacts.splice(index, 1);
-    onUpdateEmergencyContacts(updatedContacts);
-  };
+
 
   const cards = [
     { id: 'appointments', title: 'Upcoming Appointments', icon: Calendar, color: '#309898' },
@@ -110,7 +106,6 @@ export function HomePage({
         return <EmergencyContactsView
           data={userData.personalInfo.emergencyContacts}
           onEdit={handleEditEmergency}
-          onDelete={handleDeleteEmergency}
         />;
       case 'doctors':
         return <DoctorsView
@@ -467,10 +462,10 @@ function CalendarView({ appointments, onAddAppointment, onDeleteAppointment }: {
             <div key={d} className="text-sm font-bold text-gray-400 uppercase">{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-3">
+        <div className="grid grid-cols-7 gap-1 sm:gap-3">
           {days.map((date, index) => {
             if (!date) {
-              return <div key={index} className="h-20 w-20"></div>;
+              return <div key={index} className="h-16 w-14 sm:h-20 sm:w-20"></div>;
             }
 
             const dayAppointments = getAppointmentsForDate(date);
@@ -482,7 +477,7 @@ function CalendarView({ appointments, onAddAppointment, onDeleteAppointment }: {
                 key={index}
                 onClick={() => handleDateClick(date)}
                 className={
-                  `h-20 w-20 flex flex-col items-center justify-start text-sm rounded-lg relative cursor-pointer 
+                  `h-16 w-14 sm:h-20 sm:w-20 flex flex-col items-center justify-start text-sm rounded-lg relative cursor-pointer
                    transition-all p-1 bg-white text-gray-700 border border-gray-100 hover:bg-teal-50
                    ${isToday ? 'ring-2 ring-[#309898] font-bold' : ''}
                    ${isSelected && !isToday ? 'ring-2 ring-teal-300' : ''}`
@@ -873,17 +868,11 @@ function EmergencyContactsView({ data, onEdit, onDelete }: {
 
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
         {data.map((contact, index) => (
-          <div key={index} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white flex items-center justify-between group">
+          <div key={index} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white">
             <div className="flex-1">
               <p className="font-bold text-gray-900 text-lg">{contact.name}</p>
               <p className="text-sm text-gray-500">{contact.phone}</p>
             </div>
-            <button
-              onClick={() => onDelete(index)}
-              className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
           </div>
         ))}
         {data.length === 0 && (

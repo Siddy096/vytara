@@ -64,6 +64,20 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
     return phoneRegex.test(phone.replace(/\s+/g, ''));
   };
 
+  const calculateBMI = (height: string, weight: string) => {
+    if (!height || !weight) return '';
+
+    const weightKg = parseFloat(weight.replace(/[^\d.]/g, ''));
+    if (isNaN(weightKg) || weightKg <= 0) return '';
+
+    const heightCm = parseFloat(height.replace(/[^\d.]/g, ''));
+    if (isNaN(heightCm) || heightCm <= 0) return '';
+
+    const heightM = heightCm / 100;
+    const bmi = weightKg / (heightM * heightM);
+    return bmi.toFixed(1);
+  };
+
   const validateSection = (section: number) => {
     const newErrors: Record<string, string> = {};
 
@@ -152,6 +166,71 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
   const removeEmergencyContact = (index: number) => {
     const newContacts = personalInfo.emergencyContacts.filter((_, i) => i !== index);
     setPersonalInfo({ ...personalInfo, emergencyContacts: newContacts });
+  };
+
+  const removeCondition = (index: number) => {
+    const newConditions = currentMedical.conditions.filter((_, i) => i !== index);
+    setCurrentMedical({ ...currentMedical, conditions: newConditions });
+  };
+
+  const removeMedication = (index: number) => {
+    const newMedications = currentMedical.medications.filter((_, i) => i !== index);
+    setCurrentMedical({ ...currentMedical, medications: newMedications });
+  };
+
+  const removeAllergy = (index: number) => {
+    const newAllergies = currentMedical.allergies.filter((_, i) => i !== index);
+    setCurrentMedical({ ...currentMedical, allergies: newAllergies });
+  };
+
+  const removeTreatment = (index: number) => {
+    const newTreatments = currentMedical.treatments.filter((_, i) => i !== index);
+    setCurrentMedical({ ...currentMedical, treatments: newTreatments });
+  };
+
+  const removeDoctor = (index: number) => {
+    const newDoctors = currentMedical.doctors.filter((_, i) => i !== index);
+    setCurrentMedical({ ...currentMedical, doctors: newDoctors });
+  };
+
+  const removeDisease = (index: number) => {
+    const newDiseases = pastMedical.diseases.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, diseases: newDiseases });
+  };
+
+  const removeSurgery = (index: number) => {
+    const newSurgeries = pastMedical.surgeries.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, surgeries: newSurgeries });
+  };
+
+  const removeHospitalization = (index: number) => {
+    const newHospitalizations = pastMedical.hospitalizations.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, hospitalizations: newHospitalizations });
+  };
+
+  const removeInjury = (index: number) => {
+    const newInjuries = pastMedical.injuries.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, injuries: newInjuries });
+  };
+
+  const removeChildhoodIllness = (index: number) => {
+    const newIllnesses = pastMedical.childhoodIllnesses.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, childhoodIllnesses: newIllnesses });
+  };
+
+  const removePastMedication = (index: number) => {
+    const newMedications = pastMedical.pastMedications.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, pastMedications: newMedications });
+  };
+
+  const removeLongTermTreatment = (index: number) => {
+    const newTreatments = pastMedical.longTermTreatments.filter((_, i) => i !== index);
+    setPastMedical({ ...pastMedical, longTermTreatments: newTreatments });
+  };
+
+  const removeFamilyHistory = (index: number) => {
+    const newHistory = familyHistory.filter((_, i) => i !== index);
+    setFamilyHistory(newHistory);
   };
 
   const addField = (section: string, field: string) => {
@@ -291,10 +370,10 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Height</label>
+                  <label className="block text-[#309898] mb-2">Height (cm)</label>
                   <input
                     type="text"
-                    placeholder="e.g., 5'8"
+                    placeholder="e.g., 170"
                     value={personalInfo.height}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, height: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
@@ -302,13 +381,24 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                 </div>
 
                 <div>
-                  <label className="block text-[#309898] mb-2">Weight</label>
+                  <label className="block text-[#309898] mb-2">Weight (kg)</label>
                   <input
                     type="text"
-                    placeholder="e.g., 70 kg"
+                    placeholder="e.g., 70"
                     value={personalInfo.weight}
                     onChange={(e) => setPersonalInfo({ ...personalInfo, weight: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#309898] mb-2">BMI</label>
+                  <input
+                    type="text"
+                    value={calculateBMI(personalInfo.height, personalInfo.weight)}
+                    readOnly
+                    placeholder="Auto-calculated"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 bg-gray-50 cursor-not-allowed"
                   />
                 </div>
 
@@ -428,18 +518,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {currentMedical.conditions.map((condition, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter condition"
-                    value={condition}
-                    onChange={(e) => {
-                      const newConditions = [...currentMedical.conditions];
-                      newConditions[index] = e.target.value;
-                      setCurrentMedical({ ...currentMedical, conditions: newConditions });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter condition"
+                      value={condition}
+                      onChange={(e) => {
+                        const newConditions = [...currentMedical.conditions];
+                        newConditions[index] = e.target.value;
+                        setCurrentMedical({ ...currentMedical, conditions: newConditions });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {currentMedical.conditions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeCondition(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -512,6 +612,15 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
         }}
         className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
       />
+      {currentMedical.medications.length > 1 && (
+        <button
+          type="button"
+          onClick={() => removeMedication(index)}
+          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+        >
+          🗑️
+        </button>
+      )}
     </div>
   ))}
 </div>
@@ -529,18 +638,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {currentMedical.allergies.map((allergy, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter allergy"
-                    value={allergy}
-                    onChange={(e) => {
-                      const newAllergies = [...currentMedical.allergies];
-                      newAllergies[index] = e.target.value;
-                      setCurrentMedical({ ...currentMedical, allergies: newAllergies });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter allergy"
+                      value={allergy}
+                      onChange={(e) => {
+                        const newAllergies = [...currentMedical.allergies];
+                        newAllergies[index] = e.target.value;
+                        setCurrentMedical({ ...currentMedical, allergies: newAllergies });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {currentMedical.allergies.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeAllergy(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -556,18 +675,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {currentMedical.treatments.map((treatment, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter treatment"
-                    value={treatment}
-                    onChange={(e) => {
-                      const newTreatments = [...currentMedical.treatments];
-                      newTreatments[index] = e.target.value;
-                      setCurrentMedical({ ...currentMedical, treatments: newTreatments });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter treatment"
+                      value={treatment}
+                      onChange={(e) => {
+                        const newTreatments = [...currentMedical.treatments];
+                        newTreatments[index] = e.target.value;
+                        setCurrentMedical({ ...currentMedical, treatments: newTreatments });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {currentMedical.treatments.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTreatment(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -619,21 +748,32 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                       />
                     </div>
-                    <div className="flex items-center justify-end gap-2">
-                      {index === 0 ? (
-                        <span className="text-xs text-[#309898] font-semibold bg-[#309898]/10 px-3 py-1 rounded-lg">Primary Doctor</span>
-                      ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        {index === 0 ? (
+                          <span className="text-xs text-[#309898] font-semibold bg-[#309898]/10 px-3 py-1 rounded-lg">Primary Doctor</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newDoctors = [...currentMedical.doctors];
+                              const [movedDoctor] = newDoctors.splice(index, 1);
+                              newDoctors.unshift(movedDoctor);
+                              setCurrentMedical({ ...currentMedical, doctors: newDoctors });
+                            }}
+                            className="text-xs px-3 py-1 bg-[#FF8000] text-white rounded-lg hover:bg-[#FF8000]/80 transition"
+                          >
+                            Set as Primary
+                          </button>
+                        )}
+                      </div>
+                      {currentMedical.doctors.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => {
-                            const newDoctors = [...currentMedical.doctors];
-                            const [movedDoctor] = newDoctors.splice(index, 1);
-                            newDoctors.unshift(movedDoctor);
-                            setCurrentMedical({ ...currentMedical, doctors: newDoctors });
-                          }}
-                          className="text-xs px-3 py-1 bg-[#FF8000] text-white rounded-lg hover:bg-[#FF8000]/80 transition"
+                          onClick={() => removeDoctor(index)}
+                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                         >
-                          Set as Primary
+                          🗑️
                         </button>
                       )}
                     </div>
@@ -660,18 +800,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.diseases.map((disease, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter disease"
-                    value={disease}
-                    onChange={(e) => {
-                      const newDiseases = [...pastMedical.diseases];
-                      newDiseases[index] = e.target.value;
-                      setPastMedical({ ...pastMedical, diseases: newDiseases });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter disease"
+                      value={disease}
+                      onChange={(e) => {
+                        const newDiseases = [...pastMedical.diseases];
+                        newDiseases[index] = e.target.value;
+                        setPastMedical({ ...pastMedical, diseases: newDiseases });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {pastMedical.diseases.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeDisease(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -687,7 +837,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.surgeries.map((surgery, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 mb-2">
+                  <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
                       placeholder="Surgery name"
@@ -697,7 +847,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newSurgeries[index].name = e.target.value;
                         setPastMedical({ ...pastMedical, surgeries: newSurgeries });
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
                     <input
                       type="date"
@@ -707,8 +857,17 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newSurgeries[index].date = e.target.value;
                         setPastMedical({ ...pastMedical, surgeries: newSurgeries });
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
+                    {pastMedical.surgeries.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSurgery(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -725,7 +884,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.hospitalizations.map((hosp, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 mb-2">
+                  <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
                       placeholder="Reason"
@@ -735,7 +894,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newHosps[index].reason = e.target.value;
                         setPastMedical({ ...pastMedical, hospitalizations: newHosps });
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
                     <input
                       type="date"
@@ -745,8 +904,17 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newHosps[index].date = e.target.value;
                         setPastMedical({ ...pastMedical, hospitalizations: newHosps });
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
+                    {pastMedical.hospitalizations.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeHospitalization(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -763,18 +931,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.injuries.map((injury, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter injury"
-                    value={injury}
-                    onChange={(e) => {
-                      const newInjuries = [...pastMedical.injuries];
-                      newInjuries[index] = e.target.value;
-                      setPastMedical({ ...pastMedical, injuries: newInjuries });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter injury"
+                      value={injury}
+                      onChange={(e) => {
+                        const newInjuries = [...pastMedical.injuries];
+                        newInjuries[index] = e.target.value;
+                        setPastMedical({ ...pastMedical, injuries: newInjuries });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {pastMedical.injuries.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeInjury(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -790,18 +968,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.childhoodIllnesses.map((illness, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter illness"
-                    value={illness}
-                    onChange={(e) => {
-                      const newIllnesses = [...pastMedical.childhoodIllnesses];
-                      newIllnesses[index] = e.target.value;
-                      setPastMedical({ ...pastMedical, childhoodIllnesses: newIllnesses });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter illness"
+                      value={illness}
+                      onChange={(e) => {
+                        const newIllnesses = [...pastMedical.childhoodIllnesses];
+                        newIllnesses[index] = e.target.value;
+                        setPastMedical({ ...pastMedical, childhoodIllnesses: newIllnesses });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {pastMedical.childhoodIllnesses.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeChildhoodIllness(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -817,18 +1005,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.pastMedications.map((med, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter medication"
-                    value={med}
-                    onChange={(e) => {
-                      const newMeds = [...pastMedical.pastMedications];
-                      newMeds[index] = e.target.value;
-                      setPastMedical({ ...pastMedical, pastMedications: newMeds });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter medication"
+                      value={med}
+                      onChange={(e) => {
+                        const newMeds = [...pastMedical.pastMedications];
+                        newMeds[index] = e.target.value;
+                        setPastMedical({ ...pastMedical, pastMedications: newMeds });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {pastMedical.pastMedications.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePastMedication(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -844,18 +1042,28 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {pastMedical.longTermTreatments.map((treatment, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Enter treatment"
-                    value={treatment}
-                    onChange={(e) => {
-                      const newTreatments = [...pastMedical.longTermTreatments];
-                      newTreatments[index] = e.target.value;
-                      setPastMedical({ ...pastMedical, longTermTreatments: newTreatments });
-                    }}
-                    className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none mb-2"
-                  />
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Enter treatment"
+                      value={treatment}
+                      onChange={(e) => {
+                        const newTreatments = [...pastMedical.longTermTreatments];
+                        newTreatments[index] = e.target.value;
+                        setPastMedical({ ...pastMedical, longTermTreatments: newTreatments });
+                      }}
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                    />
+                    {pastMedical.longTermTreatments.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeLongTermTreatment(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -878,7 +1086,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                   </button>
                 </div>
                 {familyHistory.map((item, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 mb-2">
+                  <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
                       placeholder="Disease"
@@ -888,7 +1096,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newHistory[index].disease = e.target.value;
                         setFamilyHistory(newHistory);
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
                     <input
                       type="text"
@@ -899,8 +1107,17 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
                         newHistory[index].relation = e.target.value;
                         setFamilyHistory(newHistory);
                       }}
-                      className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                      className="flex-1 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
                     />
+                    {familyHistory.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeFamilyHistory(index)}
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -909,21 +1126,7 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center mt-8">
-          <button
-            type="button"
-            onClick={handlePrevious}
-            disabled={currentSection === 1}
-            className="flex items-center gap-2 px-6 py-2 bg-[#309898] text-white rounded-lg hover:bg-[#309898]/80 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            Previous
-          </button>
-
-          <div className="text-[#309898] hidden sm:block">
-            {currentSection} / 4
-          </div>
-
+        <div className="flex justify-end items-center mt-8">
           {currentSection < 4 ? (
             <button
               type="button"
