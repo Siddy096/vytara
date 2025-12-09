@@ -556,70 +556,74 @@ export function MedicalInfoForm({ onComplete, onClose, initialData, initialSecti
   </div>
 
   {currentMedical.medications.map((med, index) => (
-    <div key={index} className="flex w-full gap-2 mb-2">
-      <input
-        type="text"
-        placeholder="Name"
-        value={med.name}
-        onChange={(e) => {
-          const newMeds = [...currentMedical.medications];
-          newMeds[index].name = e.target.value;
-          setCurrentMedical({ ...currentMedical, medications: newMeds });
-        }}
-        className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
-      />
-      <input
-        type="text"
-        placeholder="Dosage"
-        value={med.dosage}
-        onChange={(e) => {
-          const newMeds = [...currentMedical.medications];
-          newMeds[index].dosage = e.target.value;
-          setCurrentMedical({ ...currentMedical, medications: newMeds });
-        }}
-        className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
-      />
-      <input
-        type="text"
-        placeholder="Frequency"
-        value={med.frequency}
-        onChange={(e) => {
-          const newMeds = [...currentMedical.medications];
-          newMeds[index].frequency = e.target.value;
-          setCurrentMedical({ ...currentMedical, medications: newMeds });
-        }}
-        className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
-      />
-      <input
-        type="text"
-        placeholder="Course"
-        value={med.course}
-        onChange={(e) => {
-          const newMeds = [...currentMedical.medications];
-          newMeds[index].course = e.target.value;
-          setCurrentMedical({ ...currentMedical, medications: newMeds });
-        }}
-        className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
-      />
-      <input
-        type="text"
-        placeholder="Purpose"
-        value={med.purpose}
-        onChange={(e) => {
-          const newMeds = [...currentMedical.medications];
-          newMeds[index].purpose = e.target.value;
-          setCurrentMedical({ ...currentMedical, medications: newMeds });
-        }}
-        className="flex-1 min-w-0 px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
-      />
+    <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 mb-2">
+        <input
+          type="text"
+          placeholder="Name"
+          value={med.name}
+          onChange={(e) => {
+            const newMeds = [...currentMedical.medications];
+            newMeds[index].name = e.target.value;
+            setCurrentMedical({ ...currentMedical, medications: newMeds });
+          }}
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Dosage"
+          value={med.dosage}
+          onChange={(e) => {
+            const newMeds = [...currentMedical.medications];
+            newMeds[index].dosage = e.target.value;
+            setCurrentMedical({ ...currentMedical, medications: newMeds });
+          }}
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Frequency"
+          value={med.frequency}
+          onChange={(e) => {
+            const newMeds = [...currentMedical.medications];
+            newMeds[index].frequency = e.target.value;
+            setCurrentMedical({ ...currentMedical, medications: newMeds });
+          }}
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Course"
+          value={med.course}
+          onChange={(e) => {
+            const newMeds = [...currentMedical.medications];
+            newMeds[index].course = e.target.value;
+            setCurrentMedical({ ...currentMedical, medications: newMeds });
+          }}
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Purpose"
+          value={med.purpose}
+          onChange={(e) => {
+            const newMeds = [...currentMedical.medications];
+            newMeds[index].purpose = e.target.value;
+            setCurrentMedical({ ...currentMedical, medications: newMeds });
+          }}
+          className="px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+        />
+      </div>
       {currentMedical.medications.length > 1 && (
-        <button
-          type="button"
-          onClick={() => removeMedication(index)}
-          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-        >
-          🗑️
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => removeMedication(index)}
+            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm"
+          >
+            Remove
+          </button>
+        </div>
       )}
     </div>
   ))}

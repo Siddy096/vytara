@@ -16,11 +16,11 @@ export type UserData = {
     height: string;
     weight: string;
     contactNumber: string;
-    emergencyContacts: { name: string; phone: string }[];
+    emergencyContacts: { name: string; phone: string; relation: string }[];
   };
   currentMedical: {
     conditions: string[];
-    medications: { name: string; dosage: string; frequency: string }[];
+    medications: { name: string; dosage: string; frequency: string; course: string; purpose: string }[];
     allergies: string[];
     treatments: string[];
     doctors: { name: string; phone: string; speciality: string }[];
