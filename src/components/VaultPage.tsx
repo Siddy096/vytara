@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Receipt, Activity, Shield, Upload, X, ChevronDown, Sparkles, Check } from 'lucide-react';
-import { UserData, Document } from '../App';
+import { UserData, Document, Appointment } from '../App';
 import logoImage from 'figma:asset/3356ef9e7b4ecad1a9839c039785983e296f414d.png';
 
 type Props = {
@@ -10,6 +10,8 @@ type Props = {
   documents: Document[];
   onAddDocument: (document: Document) => void;
   onDeleteDocument: (id: string) => void;
+  appointments: Appointment[];
+  openUploadModal?: boolean;
 };
 
 type Category = 'lab-reports' | 'prescriptions' | 'insurance' | 'bills' | 'all';
@@ -21,6 +23,8 @@ export function VaultPage({
   documents,
   onAddDocument,
   onDeleteDocument,
+  appointments,
+  openUploadModal,
 }: Props) {
   const [selectedOwner, setSelectedOwner] = useState('self');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
@@ -28,7 +32,16 @@ export function VaultPage({
   const [uploadData, setUploadData] = useState({
     name: '',
     category: 'lab-reports' as Category,
+    recentVisit: 'Not Applicable',
   });
+
+  useEffect(() => {
+    if (openUploadModal) {
+      setShowUploadModal(true);
+      // Reset the openUploadModal state in parent
+      // This will be handled by the parent component
+    }
+  }, [openUploadModal]);
 
 
   const owners = [
@@ -60,9 +73,10 @@ export function VaultPage({
         category: uploadData.category as Exclude<Category, 'all'>,
         uploadDate: new Date().toISOString(),
         owner: selectedOwner,
+        recentVisit: uploadData.recentVisit,
       };
       onAddDocument(newDoc);
-      setUploadData({ name: '', category: 'lab-reports' });
+      setUploadData({ name: '', category: 'lab-reports', recentVisit: 'Not Applicable' });
       setShowUploadModal(false);
     }
   };
@@ -154,7 +168,7 @@ export function VaultPage({
                     return (
                       <div
                         key={doc.id}
-                        className="relative bg-white rounded-xl shadow p-4 border-2 border-gray-200 transition-all"
+                        className="relative bg-white rounded-xl shadow p-4 border-2 border-gray-200 transition-all aspect-square flex flex-col"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div
@@ -281,6 +295,25 @@ export function VaultPage({
                       {cat.label}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[#309898] mb-2">Historical Visits</label>
+                <select
+                  value={uploadData.recentVisit}
+                  onChange={(e) => setUploadData({ ...uploadData, recentVisit: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                >
+                  <option value="Not Applicable">Not Applicable</option>
+                  {appointments
+                    ?.filter((apt: Appointment) => new Date(apt.date) < new Date())
+                    .sort((a: Appointment, b: Appointment) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((apt: Appointment) => (
+                      <option key={apt.id} value={apt.title}>
+                        {apt.title}
+                      </option>
+                    ))}
                 </select>
               </div>
 

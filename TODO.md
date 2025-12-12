@@ -32,3 +32,7 @@
 ## Button Visibility Fix
 - [x] Fix vault and profile button visibility by removing semi-transparent header background
 - [x] Change header from bg-black to solid bg-white with border
+
+## Document Display Enhancements
+- [x] Ensure documents appear in square containers in VisitInfoModal and VaultPage
+- [x] Make add document button same dimensions as documents in VisitInfoModal when no documents present

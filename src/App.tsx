@@ -43,6 +43,8 @@ export type Appointment = {
   time: string;
   title: string;
   type: string;
+  doctor?: string;
+  facility?: string;
 };
 
 export type Document = {
@@ -51,6 +53,7 @@ export type Document = {
   category: 'lab-reports' | 'prescriptions' | 'insurance' | 'bills';
   uploadDate: string;
   owner: string;
+  recentVisit?: string;
   file?: File;
 };
 
@@ -72,6 +75,7 @@ function App() {
   const [currentView, setCurrentView] = useState<'home' | 'vault' | 'profile'>('home');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [openUploadModal, setOpenUploadModal] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([
     {
       id: '1',
@@ -210,6 +214,8 @@ function App() {
           documents={documents}
           onAddDocument={handleAddDocument}
           onDeleteDocument={handleDeleteDocument}
+          appointments={appointments}
+          openUploadModal={openUploadModal}
         />
       )}
       {currentView === 'profile' && userData && (
@@ -219,6 +225,8 @@ function App() {
           onNavigateToVault={() => setCurrentView('vault')}
           onLogout={handleLogout}
           onUpdateUserData={handleUpdateUserData}
+          appointments={appointments}
+          documents={documents}
         />
       )}
     </div>

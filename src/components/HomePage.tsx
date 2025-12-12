@@ -84,6 +84,11 @@ export function HomePage({
     setShowMedicalForm(true);
   };
 
+  const handleDeleteEmergencyContact = (index: number) => {
+    const updatedContacts = userData.personalInfo.emergencyContacts.filter((_, i) => i !== index);
+    onUpdateEmergencyContacts(updatedContacts);
+  };
+
 
 
   const cards = [
@@ -106,6 +111,7 @@ export function HomePage({
         return <EmergencyContactsView
           data={userData.personalInfo.emergencyContacts}
           onEdit={handleEditEmergency}
+          onDelete={handleDeleteEmergencyContact}
         />;
       case 'doctors':
         return <DoctorsView
@@ -588,6 +594,8 @@ function AddEventModal({ selectedDate, onClose, onAdd }: {
   const [eventName, setEventName] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [eventType, setEventType] = useState<'consultation' | 'follow-up' | 'test/scan' | 'procedure' | 'other'>('consultation');
+  const [doctor, setDoctor] = useState('');
+  const [facility, setFacility] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -599,6 +607,8 @@ function AddEventModal({ selectedDate, onClose, onAdd }: {
         time: eventTime,
         title: eventName,
         type: eventType, // ✅ store selected type
+        doctor: doctor || undefined,
+        facility: facility || undefined,
       };
       onAdd(newAppointment);
       onClose();
@@ -634,7 +644,11 @@ function AddEventModal({ selectedDate, onClose, onAdd }: {
             <label className="block text-[#309898] mb-2">Event Type</label>
             <select
               value={eventType}
-              onChange={(e) => setEventType(e.target.value as any)}
+              onChange={(e) => {
+                setEventType(e.target.value as any);
+                setDoctor('');
+                setFacility('');
+              }}
               className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none bg-white"
             >
               <option value="consultation">Consultation</option>
@@ -644,6 +658,31 @@ function AddEventModal({ selectedDate, onClose, onAdd }: {
               <option value="other">Other</option>
             </select>
           </div>
+
+          {eventType !== 'other' && (
+            <>
+              <div>
+                <label className="block text-[#309898] mb-2">Concerned Doctor</label>
+                <input
+                  type="text"
+                  value={doctor}
+                  onChange={(e) => setDoctor(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                  placeholder="Enter doctor name"
+                />
+              </div>
+              <div>
+                <label className="block text-[#309898] mb-2">Medical Facility Name</label>
+                <input
+                  type="text"
+                  value={facility}
+                  onChange={(e) => setFacility(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border-2 border-[#309898]/30 focus:border-[#FF8000] focus:outline-none"
+                  placeholder="Enter facility name"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-[#309898] mb-2">Date</label>

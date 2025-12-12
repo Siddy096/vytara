@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   User, Mail, Phone, Activity, FileText, Edit2,
   Download, Droplet, TrendingUp, Calculator, CalendarCheck,
   ChevronDown, Users, Menu, X, Pill, History, LogOut, Calendar
 } from 'lucide-react';
-import { UserData } from '../App';
+import { UserData, Appointment, Document } from '../App';
 import logoImage from '../assets/Untitled design.png';
 import { MedicalInfoForm } from './MedicalInfoForm';
+import { VisitInfoModal } from './VisitInfoModal';
 
 // --- MOCK DATA ---
 const MOCK_HISTORY_DATA = [
@@ -29,50 +30,116 @@ type Props = {
   onNavigateToVault: () => void;
   onLogout: () => void;
   onUpdateUserData: (data: UserData) => void;
+  appointments: Appointment[];
+  documents: Document[];
+  openUploadModal: boolean;
+  setOpenUploadModal: (open: boolean) => void;
 };
 
-export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onLogout, onUpdateUserData }: Props) {
+export function ProfilePage({
+  userData,
+  onNavigateToHome,
+  onNavigateToVault,
+  onLogout,
+  onUpdateUserData,
+  appointments,
+  documents,
+  openUploadModal,
+  setOpenUploadModal
+}: Props) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [displayUser, setDisplayUser] = useState<any>(userData); 
+  const [displayUser, setDisplayUser] = useState<any>(userData);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+
+  // NEW: profile image state + file input ref
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!displayUser.isMock) setDisplayUser(userData);
   }, [userData]);
 
+  // Revoke object URL on unmount / change to avoid memory leak
+  useEffect(() => {
+    return () => {
+      if (profileImage) URL.revokeObjectURL(profileImage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleProfileSwitch = (profile: any) => {
     if (profile === 'me') {
-        setDisplayUser(userData); 
+      setDisplayUser(userData);
     } else {
-        const mockUser: any = {
-            ...userData, 
-            isMock: true,
-            personalInfo: {
-                ...userData.personalInfo,
-                fullName: profile.name,
-                gender: profile.gender,
-                bloodGroup: profile.blood,
-                dateOfBirth: new Date(new Date().getFullYear() - parseInt(profile.age), 0, 1).toISOString(), 
-            },
-            currentMedical: {
-                ...userData.currentMedical,
-                conditions: profile.conditions,
-                medications: profile.conditions.length > 0 ? [{ name: 'Metformin', dosage: '500mg', frequency: 'Daily' }] : [],
-            }
-        };
-        setDisplayUser(mockUser);
+      const mockUser: any = {
+        ...userData,
+        isMock: true,
+        personalInfo: {
+          ...userData.personalInfo,
+          fullName: profile.name,
+          gender: profile.gender,
+          bloodGroup: profile.blood,
+          dateOfBirth: new Date(new Date().getFullYear() - parseInt(profile.age), 0, 1).toISOString(),
+        },
+        currentMedical: {
+          ...userData.currentMedical,
+          conditions: profile.conditions,
+          medications: profile.conditions.length > 0 ? [{ name: 'Metformin', dosage: '500mg', frequency: 'Daily' }] : [],
+        }
+      };
+      setDisplayUser(mockUser);
     }
     setShowProfileMenu(false);
   };
 
   const getHistoricalEvents = () => {
     const today = new Date();
-    return MOCK_HISTORY_DATA.filter((event) => new Date(event.date) < today)
+    const pastAppointments = appointments.filter((appt) => new Date(appt.date) < today)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // If no past appointments, return mock data for testing
+    if (pastAppointments.length === 0) {
+      return [
+        {
+          id: 'mock1',
+          date: '2024-01-15',
+          time: '10:00 AM',
+          title: 'Annual Physical Checkup',
+          type: 'General',
+          doctor: 'Dr. Sarah Smith',
+          facility: 'City Hospital'
+        },
+        {
+          id: 'mock2',
+          date: '2024-02-20',
+          time: '2:00 PM',
+          title: 'Dental Cleaning',
+          type: 'Dental',
+          doctor: 'Dr. Emily Chen',
+          facility: 'Smile Dental Clinic'
+        },
+        {
+          id: 'mock3',
+          date: '2024-03-10',
+          time: '11:00 AM',
+          title: 'Blood Test',
+          type: 'Lab',
+          doctor: 'Dr. John Doe',
+          facility: 'LabCorp'
+        }
+      ];
+    }
+
+    return pastAppointments;
   };
 
   const historicalEvents = getHistoricalEvents();
+
+  const getDocumentCountForVisit = (appointment: Appointment) => {
+    return documents.filter(doc => doc.recentVisit === appointment.title).length;
+  };
 
   // --- BMI LOGIC (Safeguarded) ---
   const calculateBMI = () => {
@@ -87,10 +154,10 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
     h = h / 100;
 
     if (h > 0 && w > 0) {
-        const bmiValue = (w / (h * h));
-        // 3. Final sanity check
-        if (bmiValue > 100) return '--';
-        return bmiValue.toFixed(1);
+      const bmiValue = (w / (h * h));
+      // 3. Final sanity check
+      if (bmiValue > 100) return '--';
+      return bmiValue.toFixed(1);
     }
     return '--';
   };
@@ -100,7 +167,7 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
 
   const handleFormSubmit = (updatedData: UserData) => {
     onUpdateUserData(updatedData);
-    if (!(displayUser as any).isMock) setDisplayUser(updatedData); 
+    if (!(displayUser as any).isMock) setDisplayUser(updatedData);
     else alert("You cannot edit Family profiles in this view.");
     setShowEditForm(false);
   };
@@ -265,6 +332,27 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
     }
   };
 
+  // NEW: open file picker
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // NEW: handle file selection and preview
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // revoke old URL if present
+    if (profileImage) {
+      URL.revokeObjectURL(profileImage);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setProfileImage(objectUrl);
+
+    // Optional: if you'd like to persist this to displayUser (in-memory)
+    // you could update displayUser.personalInfo.profileImage = objectUrl
+    // but here we only keep it local for preview.
+  };
+
   return (
     // MAIN BACKGROUND: Smooth teal gradient transition (dark to light as you scroll)
     <div className="min-h-screen bg-gradient-to-b from-[#003B46] via-[#006770] via-[#00838B] to-[#00A3A9] pb-10 font-sans">
@@ -272,7 +360,6 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
       {/* 1. Navbar - FORCED STYLE GRADIENT */}
       <header 
         className="sticky top-0 z-40 border-b border-white/20 shadow-sm"
-        // INLINE STYLE TO FORCE THE GRADIENT - Teal Palette (starting from lighter shade)
         style={{ background: 'linear-gradient(90deg, #006770 0%, #00838B 40%, #00A3A9 100%)' }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -280,13 +367,11 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
             
             {/* Logo - CIRCULAR WHITE CONTAINER */}
             <div className="flex items-center gap-3">
-               {/* Container: White, Circular, Centered, Shadowed */}
                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md p-2">
                   <img 
                     src={logoImage} 
                     alt="Vytara Logo" 
                     className="w-full h-full object-contain"
-                    // Removed the white filter here
                   />
                </div>
               <h1 className="text-xl font-bold text-white tracking-wide">Vytara</h1>
@@ -338,7 +423,6 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
                 </button>
             </div>
 
-
             {/* Profile Info */}
             <div className="flex flex-col md:flex-row items-start gap-6 mb-8 mt-2 relative z-0">
               {/* Switch Profile Button & Avatar */}
@@ -364,9 +448,29 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
                         </div>
                     )}
                 </div>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center border-[4px] border-white shadow-lg shrink-0">
-                      <User className="w-10 h-10 text-teal-700/80" />
+
+                {/* NEW: Clickable PFP */}
+                <div
+                  role="button"
+                  onClick={handleAvatarClick}
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center border-[4px] border-white shadow-lg shrink-0 overflow-hidden cursor-pointer"
+                  title="Click to change profile picture"
+                >
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10 text-teal-700/80" />
+                  )}
                 </div>
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
               </div>
 
               <div className="flex-1 w-full pt-2">
@@ -439,32 +543,39 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
             </div>
             
             <div className="flex-1 overflow-y-auto space-y-3 max-h-[300px] pr-2 custom-scrollbar">
-              {historicalEvents.map((event, index) => (
-                <div key={index} className="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-2xl transition cursor-pointer group border border-transparent hover:border-gray-100">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-white group-hover:shadow-md flex flex-col items-center justify-center text-gray-500 group-hover:text-blue-600 shrink-0 transition duration-300">
-                      <span className="text-lg font-bold leading-none">{new Date(event.date).getDate()}</span>
-                      <span className="text-[10px] font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+              {historicalEvents.map((event, index) => {
+                const docCount = getDocumentCountForVisit(event);
+                return (
+                  <div
+                    key={index}
+                    onClick={() => setSelectedAppointment(event)}
+                    className="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-2xl transition cursor-pointer group border border-transparent hover:border-gray-100"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-white group-hover:shadow-md flex flex-col items-center justify-center text-gray-500 group-hover:text-blue-600 shrink-0 transition duration-300">
+                        <span className="text-lg font-bold leading-none">{new Date(event.date).getDate()}</span>
+                        <span className="text-[10px] font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                    </div>
+                    <div className="pt-0.5 flex-1">
+                        <p className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition">{event.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{event.doctor || 'Doctor not specified'} • {event.facility || 'Facility not specified'}</p>
+                        <p className="text-xs text-gray-400 mt-1">{docCount > 0 ? `${docCount} documents available` : 'No documents available'}</p>
+                    </div>
                   </div>
-                  <div className="pt-0.5">
-                      <p className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition">{event.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{event.doctor}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* 3. MEDICAL INFORMATION CARDS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          
           {/* Current Medical Status */}
           <div className="bg-white rounded-3xl p-6 shadow-xl shadow-teal-900/20 border border-white/20">
             <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
               <div className="p-2 bg-red-50 rounded-lg text-red-600"><Activity className="w-5 h-5" /></div>
               <h3 className="font-bold text-gray-800">Current Medical Status</h3>
             </div>
-            
+
             <div className="space-y-6">
               {/* Current Diagnosed Conditions */}
               <div>
@@ -516,14 +627,17 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
               <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><History className="w-5 h-5" /></div>
               <h3 className="font-bold text-gray-800">Past Medical History</h3>
             </div>
-            
+
             <div className="space-y-6">
               {/* Previous Diagnosed Conditions */}
               <div>
                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Previous Diagnosed Conditions</label>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium border border-blue-100">Seasonal Allergies (2020)</span>
-                  <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium border border-blue-100">Sprained Ankle (2018)</span>
+                  {displayUser.pastMedical.diseases.length > 0 ?
+                    displayUser.pastMedical.diseases.map((disease:string, i:number) => (
+                      <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium border border-blue-100">{disease}</span>
+                    )) : <span className="text-gray-400 text-sm italic">No previous diagnosed conditions</span>
+                  }
                 </div>
               </div>
 
@@ -531,10 +645,14 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
               <div>
                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Past Surgeries</label>
                 <div className="space-y-2">
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <p className="font-bold text-gray-700 text-sm">Appendectomy</p>
-                    <p className="text-xs text-gray-500 mt-1">Year: 2015</p>
-                  </div>
+                  {displayUser.pastMedical.surgeries.length > 0 ?
+                    displayUser.pastMedical.surgeries.map((surgery:any, i:number) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="font-bold text-gray-700 text-sm">{surgery.name}</p>
+                        <p className="text-xs text-gray-500 mt-1">Date: {surgery.date ? new Date(surgery.date).toLocaleDateString() : 'Not specified'}</p>
+                      </div>
+                    )) : <span className="text-gray-400 text-sm italic">No past surgeries</span>
+                  }
                 </div>
               </div>
 
@@ -542,15 +660,63 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
               <div>
                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Childhood Illness</label>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium border border-purple-100">Chickenpox</span>
-                  <span className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium border border-purple-100">Measles</span>
+                  {displayUser.pastMedical.childhoodIllnesses.length > 0 ?
+                    displayUser.pastMedical.childhoodIllnesses.map((illness:string, i:number) => (
+                      <span key={i} className="px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium border border-purple-100">{illness}</span>
+                    )) : <span className="text-gray-400 text-sm italic">No childhood illnesses</span>
+                  }
                 </div>
               </div>
 
               {/* Long Term Treatments */}
               <div>
                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Long Term Treatments</label>
-                <span className="text-gray-400 text-sm italic">No long-term treatments</span>
+                <div className="flex flex-wrap gap-2">
+                  {displayUser.pastMedical.longTermTreatments.length > 0 ?
+                    displayUser.pastMedical.longTermTreatments.map((treatment:string, i:number) => (
+                      <span key={i} className="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium border border-green-100">{treatment}</span>
+                    )) : <span className="text-gray-400 text-sm italic">No long-term treatments</span>
+                  }
+                </div>
+              </div>
+
+              {/* Hospitalizations */}
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Hospitalizations</label>
+                <div className="space-y-2">
+                  {displayUser.pastMedical.hospitalizations.length > 0 ?
+                    displayUser.pastMedical.hospitalizations.map((hosp:any, i:number) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="font-bold text-gray-700 text-sm">{hosp.reason}</p>
+                        <p className="text-xs text-gray-500 mt-1">Date: {hosp.date ? new Date(hosp.date).toLocaleDateString() : 'Not specified'}</p>
+                      </div>
+                    )) : <span className="text-gray-400 text-sm italic">No hospitalizations</span>
+                  }
+                </div>
+              </div>
+
+              {/* Past Injuries */}
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Past Injuries</label>
+                <div className="flex flex-wrap gap-2">
+                  {displayUser.pastMedical.injuries.length > 0 ?
+                    displayUser.pastMedical.injuries.map((injury:string, i:number) => (
+                      <span key={i} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">{injury}</span>
+                    )) : <span className="text-gray-400 text-sm italic">No past injuries</span>
+                  }
+                </div>
+              </div>
+
+              {/* Past Medications Taken */}
+              <div>
+                <label className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-3 block">Past Medications Taken</label>
+                <div className="flex flex-wrap gap-2">
+                  {displayUser.pastMedical.pastMedications.length > 0 ?
+                    displayUser.pastMedical.pastMedications.map((med:string, i:number) => (
+                      <span key={i} className="px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg text-sm font-medium border border-yellow-100">{med}</span>
+                    )) : <span className="text-gray-400 text-sm italic">No past medications</span>
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -562,9 +728,8 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
             <div className="p-2 bg-green-50 rounded-lg text-green-600"><Users className="w-5 h-5" /></div>
             <h3 className="font-bold text-gray-800">Family Medical History</h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Check if familyHistory exists in userData */}
             {displayUser.familyHistory && displayUser.familyHistory.length > 0 ? (
               displayUser.familyHistory.map((member: any, index: number) => (
                 <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
@@ -579,7 +744,6 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {/* Handle both 'conditions' and 'disease' properties */}
                     {(member.conditions && member.conditions.length > 0) || member.disease ? (
                       <>
                         {member.conditions && member.conditions.map((condition: string, i: number) => (
@@ -600,102 +764,9 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
                 </div>
               ))
             ) : (
-              // MOCK DATA when no family history is available
-              <>
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Father</p>
-                      <p className="text-xs text-gray-500">Age 65</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100 mr-1">Hypertension</span>
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100 mr-1">Diabetes Type 2</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Mother</p>
-                      <p className="text-xs text-gray-500">Age 62</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">Thyroid Disorder</span>
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100 ml-1">Osteoporosis</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Grandfather (Paternal)</p>
-                      <p className="text-xs text-gray-400 italic">(Deceased)</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100 mr-1">Heart Disease</span>
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100 mr-1">Stroke</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Grandmother (Maternal)</p>
-                      <p className="text-xs text-gray-400 italic">(Deceased)</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">Alzheimer's Disease</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Uncle (Paternal)</p>
-                      <p className="text-xs text-gray-500">Age 58</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="inline-block px-2 py-1 bg-red-50 text-red-600 rounded text-xs font-medium border border-red-100">Cancer (Colon)</span>
-                    <span className="inline-block px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-medium border border-green-100 ml-1">Recovered</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-300 transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">Sibling</p>
-                      <p className="text-xs text-gray-500">Age 28</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-gray-400 text-xs italic">No known conditions</span>
-                  </div>
-                </div>
-              </>
+              <div className="col-span-full text-center py-8">
+                <span className="text-gray-400 text-sm italic">No family medical history available</span>
+              </div>
             )}
           </div>
         </div>
@@ -708,6 +779,19 @@ export function ProfilePage({ userData, onNavigateToHome, onNavigateToVault, onL
           initialData={userData}
           onComplete={handleFormSubmit}
           onClose={() => setShowEditForm(false)}
+        />
+      )}
+
+      {/* Visit Info Modal */}
+      {selectedAppointment && (
+        <VisitInfoModal
+          appointment={selectedAppointment}
+          documents={documents}
+          onClose={() => setSelectedAppointment(null)}
+          onAddDocument={() => {
+            setSelectedAppointment(null);
+            onNavigateToVault();
+          }}
         />
       )}
     </div>
