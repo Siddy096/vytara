@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { Button } from '@mui/material';
 import { HomePage } from './components/HomePage';
 import { LoginSignupModal } from './components/LoginSignupModal';
 import { VaultPage } from './components/VaultPage';
 import { ProfilePage } from './components/ProfilePage';
-import { LandingPage } from './components/LandingPage';
+import LandingPage from './components/LandingPage';
 
 export type UserData = {
   username: string;

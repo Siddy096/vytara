@@ -5,7 +5,7 @@ import {
   ChevronDown, Users, Menu, X, Pill, History, LogOut, Calendar
 } from 'lucide-react';
 import { UserData } from '../App';
-import logoImage from '../assets/Untitled design.png';
+import logoImage from '../assets/vytara logo.png';
 import { MedicalInfoForm } from './MedicalInfoForm';
 
 // --- MOCK DATA ---
